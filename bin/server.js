@@ -1,6 +1,7 @@
 'use strict'
 
-const http = require('../src/app');
+const app = require('../src/app');
+const http = require('http');
 const debug = require('debug')('apinodejs:server');
 
 const port = normalizePort(process.env.PORT || '3000');
