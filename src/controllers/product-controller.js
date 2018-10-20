@@ -2,117 +2,109 @@
 
 const mongoose = require('mongoose');
 const Product = mongoose.model('Product');
+const ValidationContract = require('../validators/fluent-validator');
+const repositoryProduct = require('../repositories/product-reposiroty');
 
-exports.get = (req, res, next) => {
-    Product
-        .find({active: true})
-        .select("-_id title slug price")
-        .then(data => {
-            res.status(200).send({
-                data
-            });
-        }).catch(e => {
-            res.status(400).send({
-                message: 'Falha ao buscar produtos',
-                data: e
-            });
-        });  
-}
-
-exports.getBySlug = (req, res, next) => {
-    Product
-        // .findOne
-        .find({
-            active: true,
-            slug: req.params.slug
-        })
-        .select("-_id title description price slug tags")
-        .then(data => {
-            res.status(200).send({
-                data
-            });
-        }).catch(e => {
-            res.status(400).send({
-                message: 'Falha ao buscar produtos',
-                data: e
-            });
-        });  
-}
-
-exports.getById = (req, res, next) => {
-    Product
-        .findById(req.params.id)
-        .then(data => {
-            res.status(200).send({
-                data
-            });
-        }).catch(e => {
-            res.status(400).send({
-                message: 'Falha ao buscar produto(s)',
-                data: e
-            });
-        });  
-}
-
-exports.getByTag = (req, res, next) => {
-    Product
-        // .findOne
-        .find({
-            active: true,
-            tags: req.params.tag
-        })
-        .select("-_id title description price slug tags")
-        .then(data => {
-            res.status(200).send({
-                data
-            });
-        }).catch(e => {
-            res.status(400).send({
-                message: 'Falha ao buscar produtos',
-                data: e
-            });
-        });  
-}
-
-exports.post = (req, res, next) => {
-    var product = new Product(req.body);
-    product.title = req.body.title;
-    product.description = req.body.description;
-    product
-        .save()
-        .then(x => {
-            res.status(201).send({message: 'Produto cadastrado com sucesso!'});
-        }).catch(e => {
-            res.status(400).send({
-                message: 'Falha ao cadastrar o produto',
-                data: e
-            });
+exports.get = async(req, res, next) => {
+    try {
+        const data = await repositoryProduct.get();
+        res.status(200).send(data); 
+    } catch (e) {
+        res.status(500).send({
+            message: 'Falha ao processar sua requisição'
         });
-    // product
-    //     .save((err) => {
-    //         if(err){
-    //             res.status(400).send({
-    //                 message:'Falha ao cadastrar o produto.',
-    //                 data:err
-    //             });
-    //         }else{
-    //             res.status(201).send({
-    //                 message:'Produto cadastrado com sucesso!'
-    //             });
-    //         }
-    //     });       
-        
-    
+    }
+}
+
+exports.getBySlug = async(req, res, next) => {
+    try {
+        const data = await repositoryProduct
+            .getBySlug(req.params.slug);
+        res.status(200).send(data);
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao buscar produtos',
+            data: e
+        });
+    }  
+}
+
+exports.getById = async (req, res, next) => {
+    try {
+        const data = await repositoryProduct
+            .getById(req.params.id)
+        res.status(200).send(data);
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao buscar produto(s)',
+            data: e
+        });
+    }
+}
+
+exports.getByTag = async(req, res, next) => {
+    try {
+        const data = await  repositoryProduct
+            .getByTag(req.params.tag)
+        res.status(200).send(data);
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao buscar produtos',
+            data: e
+        });
+    } 
+}
+
+exports.post = async(req, res, next) => {
+    let contract = new ValidationContract();
+    contract.hasMinLen(req.body.title, 3, 'O título deve conter ao menos 3 caracteres.');
+    contract.hasMinLen(req.body.slug, 3, 'O slug deve conter ao menos 3 caracteres.');
+    contract.hasMinLen(req.body.description, 3, 'A descrição deve conter ao menos 3 caracteres.');
+
+    // Se os dados forem inválidos
+    if (!contract.isValid()) {
+        res.status(400).send(contract.errors()).end();
+        return;
+    }
+
+    try {
+        await repositoryProduct
+            .create(req.body);
+        res.status(201).send({message: 'Produto cadastrado com sucesso!'});
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao cadastrar o produto',
+            data: e
+        });  
+    }                 
 };
 
-exports.put = (req, res, next) => {
-    const id = req.params.id;
-    res.status(200).send({
-        id: id,
-        item: req.body
-    });
+exports.put = async(req, res, next) => {
+    try {
+        await repositoryProduct
+            .update(req.body);
+        res.status(201).send({
+                message: "Produto atualizado com sucesso!"
+        });
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao atualizar produto',
+            data: e
+        });
+    }           
 };
 
-exports.delete = (req, res, next) => {
-    res.status(200).send(req.body);
+exports.delete = async(req, res, next) => {
+    try {
+        await repositoryProduct
+        .delete(req.param.id);
+        res.status(200).send({
+                message: "Produto removido com sucesso!"
+        });
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao remover produto',
+            data: e
+        });
+    } 
 };

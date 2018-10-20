@@ -4,7 +4,7 @@ const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
 const schema = new Schema({
-    // _id -> criado automaicamente
+    // _id -> criado automaticamente
     title: {
         type: String,
         required: true,
