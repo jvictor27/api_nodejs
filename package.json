@@ -23,6 +23,7 @@
     "express": "^4.16.3",
     "guid": "0.0.12",
     "http": "0.0.0",
+    "md5": "^2.2.1",
     "mongoose": "^5.2.13"
   },
   "devDependencies": {
