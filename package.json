@@ -18,7 +18,7 @@
   },
   "homepage": "https://github.com/jvictor27/api_nodejs#readme",
   "dependencies": {
-    "aws-sdk": "^2.353.0",,
+    "aws-sdk": "^2.353.0",
     "body-parser": "^1.18.3",
     "debug": "^3.1.0",
     "express": "^4.16.3",
