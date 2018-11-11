@@ -18,15 +18,17 @@
   },
   "homepage": "https://github.com/jvictor27/api_nodejs#readme",
   "dependencies": {
+    "aws-sdk": "^2.353.0",
     "body-parser": "^1.18.3",
     "debug": "^3.1.0",
     "express": "^4.16.3",
     "guid": "0.0.12",
     "http": "0.0.0",
     "md5": "^2.2.1",
+    "mime": "^2.3.1",
     "mongoose": "^5.2.13"
   },
   "devDependencies": {
-    "nodemon": "^1.18.4"
+    "nodemon": "^1.18.6"
   }
 }
