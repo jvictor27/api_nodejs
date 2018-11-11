@@ -1,7 +1,20 @@
 'use-strict';
 
-const ValidationContract = require('../validators/fluent-validator');
+const validationContract = require('../validators/fluent-validator');
 const repositoryProduct = require('../repositories/product-repository');
+const config = require('../config');
+const AWS = require('aws-sdk');
+const fs = require('fs');
+const path = require('path');
+const mime = require('mime');
+
+// Configurando o AWS
+AWS.config.update({
+    accessKeyId: config.awsAccessKeyId,
+    secretAccessKey: config.awsSecretAccessKey
+});
+
+var s3 = new AWS.S3();
 
 exports.get = async(req, res, next) => {
     try {
@@ -54,7 +67,7 @@ exports.getByTag = async(req, res, next) => {
 }
 
 exports.post = async(req, res, next) => {
-    let contract = new ValidationContract();
+    let contract = new validationContract();
     contract.hasMinLen(req.body.title, 3, 'O título deve conter ao menos 3 caracteres.');
     contract.hasMinLen(req.body.slug, 3, 'O slug deve conter ao menos 3 caracteres.');
     contract.hasMinLen(req.body.description, 3, 'A descrição deve conter ao menos 3 caracteres.');
@@ -66,8 +79,28 @@ exports.post = async(req, res, next) => {
     }
 
     try {
-        await repositoryProduct
-            .create(req.body);
+        let mimeType = mime.getType(req.body.image);
+
+        let paramsS3 = {
+            Bucket: config.bucketImageName,
+            Body: fs.createReadStream(req.body.image),
+            Key: "products/"+Date.now()+"_"+path.basename(req.body.image),
+            ContentType: mimeType, 
+            ACL:  'public-read' 
+        }
+
+        let putObjectPromise = await s3.upload(paramsS3).promise();
+        let imageLocation = putObjectPromise.Location;
+
+        await repositoryProduct.create({
+            title: req.body.title,
+            slug: req.body.slug,  
+            description: req.body.description,
+            price: req.body.price,   
+            active: true,
+            tags: req.body.tags,
+            image: imageLocation 
+        });
         res.status(201).send({message: 'Produto cadastrado com sucesso!'});
     } catch(e) {
         res.status(400).send({
