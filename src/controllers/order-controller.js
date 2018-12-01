@@ -3,6 +3,7 @@
 const ValidationContract = require('../validators/fluent-validator');
 const repositoryOrder = require('../repositories/order-repository');
 const guid = require('guid');
+const authService = require('../services/auth_service');
 
 exports.get = async(req, res, next) => {
     try {
@@ -16,21 +17,16 @@ exports.get = async(req, res, next) => {
 }
 
 exports.post = async(req, res, next) => {
-    // let contract = new ValidationContract();
-    // contract.hasMinLen(req.body.name, 3, 'O nome deve conter ao menos 3 caracteres.');
-    // contract.isEmail(req.body.email, 'E-mail inválido.');
-    // contract.hasMinLen(req.body.password, 6, 'A senha deve conter ao menos 3 caracteres.');
-
-    // // Se os dados forem inválidos
-    // if (!contract.isValid()) {
-    //     res.status(400).send(contract.errors()).end();
-    //     return;
-    // }
-
     try {
+        // Recupera o token
+        const token = req.body.token || req.query.token || req.headers['x-access-token'];
+
+        //Decodifica o token
+        const data = await authService.decodeToken(token);
+
         await repositoryOrder
             .create({
-                customer: req.body.customer,
+                customer: data.id,
                 number: guid.raw().substring(0,6),
                 items: req.body.items
             });

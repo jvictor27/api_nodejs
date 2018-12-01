@@ -3,6 +3,7 @@
 const ValidationContract = require('../validators/fluent-validator');
 const repositoryCustomer = require('../repositories/customer-repository');
 const md5 = require('md5');
+const authService = require('../services/auth_service');
 
 exports.post = async(req, res, next) => {
     let contract = new ValidationContract();
@@ -59,4 +60,49 @@ exports.delete = async(req, res, next) => {
             data: e
         });
     } 
+};
+
+exports.authenticate = async(req, res, next) => {
+    let contract = new ValidationContract();
+    contract.isEmail(req.body.email, 'E-mail inválido.');
+    contract.hasMinLen(req.body.password, 6, 'A senha deve conter ao menos 6 caracteres.');
+
+    // Se os dados forem inválidos
+    if (!contract.isValid()) {
+        res.status(400).send(contract.errors()).end();
+        return;
+    }
+
+    try {
+        const customer = await repositoryCustomer.authenticate({
+            email: req.body.email,
+            password: md5(req.body.password + global.SALT_KEY)
+        });
+
+        if (!customer) {
+            res.status(404).send({
+                message: 'usuário ou senha inválidos'
+            });
+            return;
+        }
+
+        const token = await authService.generateToken({
+            id: customer._id,
+            email: customer.email, 
+            name: customer.name
+        });
+
+        res.status(201).send({
+            token: token,
+            data : {
+                email: customer.email,
+                name: customer.name
+            }
+        });
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao autenticar o cliente',
+            data: e
+        });  
+    }                 
 };

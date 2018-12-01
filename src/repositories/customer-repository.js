@@ -22,3 +22,11 @@ exports.update = async(data) => {
 exports.delete = async(id) => {
     await Customer.findOneAndRemove(id);
 }
+
+exports.authenticate = async(data) => {
+    const res = await Customer.findOne({
+        email: data.email,
+        password: data.password
+    });
+    return res; 
+}
