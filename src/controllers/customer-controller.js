@@ -106,3 +106,50 @@ exports.authenticate = async(req, res, next) => {
         });  
     }                 
 };
+
+exports.refreshToken = async(req, res, next) => {
+    let contract = new ValidationContract();
+    contract.isEmail(req.body.email, 'E-mail inválido.');
+    contract.hasMinLen(req.body.password, 6, 'A senha deve conter ao menos 6 caracteres.');
+
+    // Se os dados forem inválidos
+    if (!contract.isValid()) {
+        res.status(400).send(contract.errors()).end();
+        return;
+    }
+
+    try {
+
+        // Recupera o token
+        const token = req.body.token || req.query.token || req.headers['x-access-token'];
+        //Decodifica o token
+        const data = await authService.decodeToken(token);  
+        const customer = await repositoryCustomer.getById(data.id);
+
+        if (!customer) {
+            res.status(404).send({
+                message: 'Cliente não encontrado'
+            });
+            return;
+        }
+
+        const tokenData = await authService.generateToken({
+            id: customer._id,
+            email: customer.email, 
+            name: customer.name
+        });
+
+        res.status(201).send({
+            token: token,
+            data : {
+                email: customer.email,
+                name: customer.name
+            }
+        });
+    } catch(e) {
+        res.status(400).send({
+            message: 'Falha ao autenticar o cliente',
+            data: e
+        });  
+    }                 
+};
